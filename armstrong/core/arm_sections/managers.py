@@ -1,10 +1,15 @@
 from django.db import models
+from django.db.models import Q
 
 
 class SectionSlugManager(models.Manager):
-    def __init__(self, section_field="primary_section", slug_field="slug",
-            *args, **kwargs):
+    def __init__(self,
+                 primary_section_field="primary_section",
+                 section_field="sections",
+                 slug_field="slug",
+                 *args, **kwargs):
         super(SectionSlugManager, self).__init__(*args, **kwargs)
+        self.primary_section_field = primary_section_field
         self.section_field = section_field
         self.slug_field = slug_field
 
@@ -15,11 +20,13 @@ class SectionSlugManager(models.Manager):
             slug = slug[1:]
         section_slug, content_slug = slug.rsplit("/", 1)
         section_slug += "/"
-        kwargs = {
-                "%s__full_slug" % self.section_field: section_slug,
-                self.slug_field: content_slug,
-        }
-        qs = self.model.objects.filter(**kwargs)
+
+        primary = {self.slug_field: content_slug}
+        secondary = primary.copy()
+        primary["%s__full_slug" % self.primary_section_field] = section_slug
+        secondary["%s__full_slug" % self.section_field] = section_slug
+
+        qs = self.model.objects.filter(Q(**primary) | Q(**secondary))
         if hasattr(qs, "select_subclasses"):
             qs = qs.select_subclasses()
         try:
