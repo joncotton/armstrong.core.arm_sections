@@ -33,6 +33,9 @@ class Section(MPTTModel):
     def items(self):
         return SECTION_ITEM_BACKEND(self)
 
+    def limited_items(self, model):
+        return SECTION_ITEM_BACKEND(self, targetModel=model)
+
     def save(self, *args, **kwargs):
         orig_full_slug = self.full_slug
         if self.parent:
